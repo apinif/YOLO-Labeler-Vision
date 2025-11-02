@@ -7,6 +7,7 @@ A simple GUI application for labeling images for YOLO model training
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, colorchooser
+from tkinter import font as tkfont
 from PIL import Image, ImageTk, ImageDraw
 from pathlib import Path
 import random
@@ -17,6 +18,43 @@ class YOLOLabeler:
         self.root = root
         self.root.title("YOLO Image Labeler")
         self.root.geometry("1400x900")
+        
+        # Modern color scheme
+        self.colors = {
+            'bg_primary': '#2b2b2b',      # Dark gray background
+            'bg_secondary': '#3c3c3c',   # Slightly lighter gray
+            'bg_panel': '#1e1e1e',       # Dark panel background
+            'bg_button': '#0078d4',      # Modern blue
+            'bg_button_hover': '#005a9e', # Darker blue for hover
+            'bg_button_danger': '#d13438', # Red for delete actions
+            'bg_button_success': '#107c10', # Green for success actions
+            'bg_button_warning': '#ffaa44', # Orange for warnings
+            'text_primary': '#ffffff',    # White text
+            'text_secondary': '#cccccc',  # Light gray text
+            'text_muted': '#999999',      # Muted gray text
+            'border': '#404040',          # Border color
+            'canvas_bg': '#1a1a1a',       # Canvas background
+        }
+        
+        # Modern fonts (with fallbacks for cross-platform compatibility)
+        # Check available fonts
+        available_fonts = list(tkfont.families())
+        if 'Segoe UI' in available_fonts:
+            font_family = 'Segoe UI'
+        elif 'Ubuntu' in available_fonts:
+            font_family = 'Ubuntu'
+        elif 'DejaVu Sans' in available_fonts:
+            font_family = 'DejaVu Sans'
+        else:
+            font_family = 'Helvetica'
+        
+        self.fonts = {
+            'title': (font_family, 12, 'bold'),
+            'heading': (font_family, 11, 'bold'),
+            'body': (font_family, 10),
+            'small': (font_family, 9),
+            'button': (font_family, 9, 'bold'),
+        }
         
         # Data structures
         self.image_dir = None
@@ -64,15 +102,20 @@ class YOLOLabeler:
         self.add_class("bicycle", "#0000FF", 2)
         self.selected_class_index = 0
         
+        # Configure root window background
+        self.root.configure(bg=self.colors['bg_primary'])
+        
         self.setup_ui()
         
     def setup_ui(self):
         """Setup the user interface"""
-        # Top menu bar
-        menubar = tk.Menu(self.root)
+        # Top menu bar with modern styling
+        menubar = tk.Menu(self.root, bg=self.colors['bg_secondary'], fg=self.colors['text_primary'],
+                         activebackground=self.colors['bg_button'], activeforeground=self.colors['text_primary'])
         self.root.config(menu=menubar)
         
-        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu = tk.Menu(menubar, tearoff=0, bg=self.colors['bg_secondary'], fg=self.colors['text_primary'],
+                           activebackground=self.colors['bg_button'], activeforeground=self.colors['text_primary'])
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open Directory", command=self.open_directory)
         file_menu.add_separator()
@@ -83,144 +126,172 @@ class YOLOLabeler:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         
-        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu = tk.Menu(menubar, tearoff=0, bg=self.colors['bg_secondary'], fg=self.colors['text_primary'],
+                           activebackground=self.colors['bg_button'], activeforeground=self.colors['text_primary'])
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="Keyboard Shortcuts", command=self.show_help)
         
         # Main container
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        main_frame = tk.Frame(self.root, bg=self.colors['bg_primary'])
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)
         
-        # Top info bar
-        info_frame = tk.Frame(main_frame)
-        info_frame.pack(fill=tk.X, pady=(0, 10))
+        # Top info bar with modern styling
+        info_frame = tk.Frame(main_frame, bg=self.colors['bg_panel'], relief=tk.FLAT, bd=0)
+        info_frame.pack(fill=tk.X, pady=(0, 12))
         
         self.info_label = tk.Label(info_frame, text="No directory selected", 
-                                   font=("Arial", 10))
-        self.info_label.pack(side=tk.LEFT)
+                                   font=self.fonts['body'], bg=self.colors['bg_panel'],
+                                   fg=self.colors['text_secondary'], anchor='w')
+        self.info_label.pack(side=tk.LEFT, padx=12, pady=8)
         
         self.image_counter_label = tk.Label(info_frame, text="0 / 0", 
-                                           font=("Arial", 10))
-        self.image_counter_label.pack(side=tk.RIGHT)
+                                           font=self.fonts['body'], bg=self.colors['bg_panel'],
+                                           fg=self.colors['text_primary'])
+        self.image_counter_label.pack(side=tk.RIGHT, padx=12, pady=8)
         
         # Content area - split into canvas and side panel
-        content_frame = tk.Frame(main_frame)
-        content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        content_frame = tk.Frame(main_frame, bg=self.colors['bg_primary'])
+        content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
         
         # Image display canvas (left side)
-        canvas_frame = tk.Frame(content_frame, bg='gray25')
-        canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        canvas_frame = tk.Frame(content_frame, bg=self.colors['canvas_bg'], relief=tk.FLAT)
+        canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 12))
         
-        self.canvas = tk.Canvas(canvas_frame, bg='gray25', highlightthickness=0, cursor="cross")
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas = tk.Canvas(canvas_frame, bg=self.colors['canvas_bg'], highlightthickness=0, 
+                               cursor="cross", bd=0, relief=tk.FLAT)
+        self.canvas.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         
         # Bind mouse events for drawing
         self.canvas.bind('<Button-1>', self.on_mouse_down)
         self.canvas.bind('<B1-Motion>', self.on_mouse_drag)
         self.canvas.bind('<ButtonRelease-1>', self.on_mouse_up)
         
-        # Right side panel
-        side_panel = tk.Frame(content_frame, width=300, bg='lightgray')
+        # Right side panel with modern dark theme
+        side_panel = tk.Frame(content_frame, width=320, bg=self.colors['bg_panel'], relief=tk.FLAT)
         side_panel.pack(side=tk.RIGHT, fill=tk.BOTH)
         side_panel.pack_propagate(False)
         
         # Classes section
-        classes_label = tk.Label(side_panel, text="Classes", font=("Arial", 12, "bold"), bg='lightgray')
-        classes_label.pack(pady=(10, 5))
+        classes_label = tk.Label(side_panel, text="CLASSES", font=self.fonts['heading'], 
+                                bg=self.colors['bg_panel'], fg=self.colors['text_primary'],
+                                anchor='w')
+        classes_label.pack(fill=tk.X, padx=16, pady=(16, 8))
         
         # Class list with scrollbar
-        class_list_frame = tk.Frame(side_panel, bg='lightgray')
-        class_list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 5))
+        class_list_frame = tk.Frame(side_panel, bg=self.colors['bg_panel'])
+        class_list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
         
-        class_scrollbar = tk.Scrollbar(class_list_frame)
+        class_scrollbar = tk.Scrollbar(class_list_frame, bg=self.colors['bg_secondary'],
+                                       troughcolor=self.colors['bg_panel'], 
+                                       activebackground=self.colors['bg_button'])
         class_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.class_listbox = tk.Listbox(class_list_frame, yscrollcommand=class_scrollbar.set, 
-                                        height=8, font=("Arial", 10))
+                                        height=8, font=self.fonts['body'],
+                                        bg=self.colors['bg_secondary'], fg=self.colors['text_primary'],
+                                        selectbackground=self.colors['bg_button'],
+                                        selectforeground=self.colors['text_primary'],
+                                        highlightthickness=0, bd=0,
+                                        activestyle='none')
         self.class_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         class_scrollbar.config(command=self.class_listbox.yview)
         self.class_listbox.bind('<<ListboxSelect>>', self.on_class_select)
         
         # Class management buttons
-        class_btn_frame = tk.Frame(side_panel, bg='lightgray')
-        class_btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        class_btn_frame = tk.Frame(side_panel, bg=self.colors['bg_panel'])
+        class_btn_frame.pack(fill=tk.X, padx=12, pady=8)
         
-        add_class_btn = tk.Button(class_btn_frame, text="Add Class", command=self.add_class_dialog, 
-                                  bg='#4CAF50', fg='white', font=("Arial", 9))
-        add_class_btn.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 2))
+        add_class_btn = self.create_modern_button(class_btn_frame, "Add Class", 
+                                                  self.add_class_dialog, 
+                                                  bg_color=self.colors['bg_button_success'])
+        add_class_btn.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
         
-        edit_class_btn = tk.Button(class_btn_frame, text="Edit ID", command=self.edit_class_id,
-                                    bg='#2196F3', fg='white', font=("Arial", 9))
+        edit_class_btn = self.create_modern_button(class_btn_frame, "Edit ID", 
+                                                   self.edit_class_id,
+                                                   bg_color=self.colors['bg_button'])
         edit_class_btn.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(2, 2))
         
-        remove_class_btn = tk.Button(class_btn_frame, text="Remove", command=self.remove_class,
-                                     bg='#f44336', fg='white', font=("Arial", 9))
-        remove_class_btn.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(2, 0))
+        remove_class_btn = self.create_modern_button(class_btn_frame, "Remove", 
+                                                     self.remove_class,
+                                                     bg_color=self.colors['bg_button_danger'])
+        remove_class_btn.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 0))
         
         # Current class indicator
-        self.current_class_frame = tk.Frame(side_panel, bg='lightgray', height=40)
-        self.current_class_frame.pack(fill=tk.X, padx=10, pady=5)
+        self.current_class_frame = tk.Frame(side_panel, bg=self.colors['bg_secondary'], 
+                                           relief=tk.FLAT, bd=0)
+        self.current_class_frame.pack(fill=tk.X, padx=12, pady=8)
         
-        tk.Label(self.current_class_frame, text="Current Class:", bg='lightgray', 
-                font=("Arial", 9)).pack(side=tk.LEFT)
+        tk.Label(self.current_class_frame, text="Current:", bg=self.colors['bg_secondary'], 
+                font=self.fonts['small'], fg=self.colors['text_muted']).pack(side=tk.LEFT, padx=12, pady=10)
         self.current_class_label = tk.Label(self.current_class_frame, text="None", 
-                                           font=("Arial", 10, "bold"), bg='lightgray')
-        self.current_class_label.pack(side=tk.LEFT, padx=5)
+                                           font=self.fonts['heading'], bg=self.colors['bg_secondary'],
+                                           fg=self.colors['text_primary'])
+        self.current_class_label.pack(side=tk.LEFT, padx=(0, 12), pady=10)
         
         # Separator
-        tk.Frame(side_panel, height=2, bg='gray', relief=tk.SUNKEN).pack(fill=tk.X, padx=10, pady=10)
+        separator = tk.Frame(side_panel, height=1, bg=self.colors['border'], relief=tk.FLAT)
+        separator.pack(fill=tk.X, padx=12, pady=12)
         
         # Bounding boxes section
-        boxes_label = tk.Label(side_panel, text="Bounding Boxes", font=("Arial", 12, "bold"), bg='lightgray')
-        boxes_label.pack(pady=(5, 5))
+        boxes_label = tk.Label(side_panel, text="BOUNDING BOXES", font=self.fonts['heading'], 
+                              bg=self.colors['bg_panel'], fg=self.colors['text_primary'],
+                              anchor='w')
+        boxes_label.pack(fill=tk.X, padx=16, pady=(0, 8))
         
         # Bounding box list with scrollbar
-        box_list_frame = tk.Frame(side_panel, bg='lightgray')
-        box_list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 5))
+        box_list_frame = tk.Frame(side_panel, bg=self.colors['bg_panel'])
+        box_list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
         
-        box_scrollbar = tk.Scrollbar(box_list_frame)
+        box_scrollbar = tk.Scrollbar(box_list_frame, bg=self.colors['bg_secondary'],
+                                     troughcolor=self.colors['bg_panel'],
+                                     activebackground=self.colors['bg_button'])
         box_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.box_listbox = tk.Listbox(box_list_frame, yscrollcommand=box_scrollbar.set,
-                                      height=8, font=("Arial", 9))
+                                      height=8, font=self.fonts['small'],
+                                      bg=self.colors['bg_secondary'], fg=self.colors['text_primary'],
+                                      selectbackground=self.colors['bg_button'],
+                                      selectforeground=self.colors['text_primary'],
+                                      highlightthickness=0, bd=0,
+                                      activestyle='none')
         self.box_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         box_scrollbar.config(command=self.box_listbox.yview)
         
         # Box management buttons
-        box_btn_frame = tk.Frame(side_panel, bg='lightgray')
-        box_btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        box_btn_frame = tk.Frame(side_panel, bg=self.colors['bg_panel'])
+        box_btn_frame.pack(fill=tk.X, padx=12, pady=8)
         
-        delete_box_btn = tk.Button(box_btn_frame, text="Delete Selected Box", 
-                                   command=self.delete_selected_box,
-                                   bg='#ff9800', fg='white')
+        delete_box_btn = self.create_modern_button(box_btn_frame, "Delete Selected Box", 
+                                                   self.delete_selected_box,
+                                                   bg_color=self.colors['bg_button_warning'])
         delete_box_btn.pack(fill=tk.X)
         
-        clear_all_btn = tk.Button(box_btn_frame, text="Clear All Boxes", 
-                                 command=self.clear_all_boxes,
-                                 bg='#f44336', fg='white')
-        clear_all_btn.pack(fill=tk.X, pady=(5, 0))
+        clear_all_btn = self.create_modern_button(box_btn_frame, "Clear All Boxes", 
+                                                  self.clear_all_boxes,
+                                                  bg_color=self.colors['bg_button_danger'])
+        clear_all_btn.pack(fill=tk.X, pady=(8, 0))
         
         # Navigation controls
-        control_frame = tk.Frame(main_frame)
+        control_frame = tk.Frame(main_frame, bg=self.colors['bg_primary'])
         control_frame.pack(fill=tk.X)
         
-        self.prev_button = tk.Button(control_frame, text="← Previous", 
-                                     command=self.prev_image, 
-                                     state=tk.DISABLED,
-                                     width=15, height=2)
-        self.prev_button.pack(side=tk.LEFT, padx=5)
+        self.prev_button = self.create_modern_button(control_frame, "← Previous", 
+                                                     self.prev_image, 
+                                                     state=tk.DISABLED,
+                                                     width=18, height=2)
+        self.prev_button.pack(side=tk.LEFT, padx=(0, 8))
         
-        self.open_dir_button = tk.Button(control_frame, text="Open Directory",
-                                         command=self.open_directory,
-                                         width=20, height=2,
-                                         bg='lightblue')
-        self.open_dir_button.pack(side=tk.LEFT, expand=True, padx=5)
+        self.open_dir_button = self.create_modern_button(control_frame, "📁 Open Directory",
+                                                         self.open_directory,
+                                                         width=24, height=2,
+                                                         bg_color=self.colors['bg_button'])
+        self.open_dir_button.pack(side=tk.LEFT, expand=True, padx=4)
         
-        self.next_button = tk.Button(control_frame, text="Next →", 
-                                     command=self.next_image,
-                                     state=tk.DISABLED,
-                                     width=15, height=2)
-        self.next_button.pack(side=tk.LEFT, padx=5)
+        self.next_button = self.create_modern_button(control_frame, "Next →", 
+                                                     self.next_image,
+                                                     state=tk.DISABLED,
+                                                     width=18, height=2)
+        self.next_button.pack(side=tk.LEFT, padx=(8, 0))
         
         # Keyboard bindings
         self.root.bind('<Left>', lambda e: self.prev_image())
@@ -237,6 +308,38 @@ class YOLOLabeler:
         
         # Update class list
         self.update_class_list()
+    
+    def create_modern_button(self, parent, text, command, bg_color=None, state=tk.NORMAL, width=None, height=None):
+        """Create a modern styled button"""
+        if bg_color is None:
+            bg_color = self.colors['bg_button']
+        
+        btn = tk.Button(parent, text=text, command=command, 
+                       bg=bg_color, fg=self.colors['text_primary'],
+                       font=self.fonts['button'], relief=tk.FLAT, bd=0,
+                       cursor='hand2', state=state,
+                       activebackground=self.colors['bg_button_hover'],
+                       activeforeground=self.colors['text_primary'],
+                       padx=12, pady=8)
+        
+        if width:
+            btn.config(width=width)
+        if height:
+            btn.config(height=height)
+        
+        # Add hover effect
+        def on_enter(e):
+            if btn['state'] == tk.NORMAL:
+                btn.config(bg=self.colors['bg_button_hover'])
+        
+        def on_leave(e):
+            if btn['state'] == tk.NORMAL:
+                btn.config(bg=bg_color)
+        
+        btn.bind('<Enter>', on_enter)
+        btn.bind('<Leave>', on_leave)
+        
+        return btn
         
     def add_class(self, class_name=None, color=None, class_id=None):
         """Add a new class"""
@@ -326,8 +429,9 @@ class YOLOLabeler:
             color = self.class_colors[class_name]
             class_id = self.class_ids[class_name]
             self.class_listbox.insert(tk.END, f"  [{class_id}] {class_name}")
-            self.class_listbox.itemconfig(i, bg=color, 
-                                          fg='white' if self.is_dark_color(color) else 'black')
+            # Use class color with better contrast
+            text_color = 'white' if self.is_dark_color(color) else 'black'
+            self.class_listbox.itemconfig(i, bg=color, fg=text_color)
         
         if self.selected_class_index is not None and self.selected_class_index < len(self.classes):
             self.class_listbox.selection_set(self.selected_class_index)
@@ -355,7 +459,7 @@ class YOLOLabeler:
             color = self.class_colors[class_name]
             self.current_class_label.config(text=class_name, fg=color)
         else:
-            self.current_class_label.config(text="None", fg='black')
+            self.current_class_label.config(text="None", fg=self.colors['text_muted'])
     
     def edit_class_id(self):
         """Edit the YOLO ID for the selected class"""
